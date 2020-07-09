@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/ztalarick/booktrade/issues"
   },
-  "homepage": "https://github.com/ztalarick/booktrade#readme"
+  "homepage": "https://github.com/ztalarick/booktrade#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
