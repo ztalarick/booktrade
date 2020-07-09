@@ -1,0 +1,19 @@
+{
+  "name": "booktrade",
+  "version": "1.0.0",
+  "description": "Webserver for Booktrade. Provides an API to interact with a Neo4j database.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ztalarick/booktrade.git"
+  },
+  "author": "Zachary Talarick",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/ztalarick/booktrade/issues"
+  },
+  "homepage": "https://github.com/ztalarick/booktrade#readme"
+}
