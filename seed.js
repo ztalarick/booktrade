@@ -1,28 +1,18 @@
 // run $sudo neo4j start
 const neo4j = require('neo4j-driver')
+const users = require('./data/users.js')
 
-// password = Booktrade!
-const driver = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "Booktrade!"));
-const session = driver.session()
-const personName = 'Alice'
 
 async function main(){
-  try {
-    const result = await session.run(
-      'CREATE (a:Person {name: $name}) RETURN a',
-      { name: personName }
-    )
+  await users.clear();
+  
+  await users.create_user("username", "password", "someEmail@domain.com");
+  await users.create_user("username2", "password2", "someEmail2@domain.com");
 
-    const singleRecord = result.records[0]
-    const node = singleRecord.get(0)
-
-    console.log(node.properties.name)
-  } finally {
-    await session.close()
-  }
+  await users.getAll();
 
   // on application exit:
-  await driver.close()
+  await users.driver.close()
 }
 
 main();
