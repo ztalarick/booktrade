@@ -5,25 +5,38 @@ const neo4j = require('neo4j-driver')
 const bcrypt = require('bcrypt');
 const saltRounds = 13; //This is the number that decides how powerful the hash is
 
-// password = Booktrade!
-const driver = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "Booktrade!"));
+const drivers = require('./drivers.js');
+const driver = drivers.driver;
 
-const session = driver.session();
+//get a user by email
+async function get_user(email){
+  const session = driver.session();
+
+  let result = await session.run('MATCH (u:User {email: $emailParam}) RETURN u', {
+    emailParam: email
+  })
+
+  await session.close();
+  return result;
+}
 
 //function to create a user
-async function create_user(username, password, email){
+//email must be unique
+async function create_user(email, password){
   const session = driver.session();
   const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-  if(!username || typeof username !== 'string') return Promise.reject("Invalid Username");
   if(!password || typeof password !== 'string') return Promise.reject("Invalid Password");
-  if(!username || typeof email !== 'string') return Promise.reject("Invalid Email");
+  if(!email || typeof email !== 'string') return Promise.reject("Invalid Email");
+
+  //see if email is already in database
+  let search = await get_user(email);
+  if(search.records.length != 0) return Promise.reject("Error, email '" + email + "' is not unique. There is already a user with that email.")
 
   try {
-    let result = await session.run('CREATE (u:User {username: $usernameParam, password: $passwordParam, email: $emailParam}) RETURN u',
-     { usernameParam: username,
-       passwordParam: hashedPassword,
-       emailParam: email
+    let result = await session.run('CREATE (u:User {email: $emailParam, password: $passwordParam}) RETURN u', {
+       emailParam: email,
+       passwordParam: hashedPassword
      })
   } catch (e){
     console.log(e);
@@ -32,8 +45,8 @@ async function create_user(username, password, email){
   }
 }
 
-//get a users in database
-//note as of now username is not unique
+
+//get all users in database up to 25
 async function getAll(){
   const session = driver.session();
 
@@ -46,15 +59,30 @@ async function getAll(){
 
 }
 
-// Deletes all nodes with no relationship FOR DEBUGGING ONLY
+async function delete_user(email){
+  const session = driver.session();
+
+  let result = await session.run('MATCH (u:User {email: $emailParam}) DELETE u', {
+    emailParam: email
+  })
+
+  await session.close();
+  return result;
+}
+
+// Deletes all nodes FOR DEBUGGING ONLY
 async function clear(){
   const session = driver.session();
-  session.run('match (a) delete a');
+  await session.run('MATCH (a) -[r] -> () DELETE a, r');
+  await session.run('MATCH (a) DELETE a');
+  await session.close();
 }
 
 module.exports = {
   driver: driver,
   create_user: create_user,
   getAll: getAll,
-  clear: clear
+  clear: clear,
+  get_user: get_user,
+  delete_user: delete_user
 }
