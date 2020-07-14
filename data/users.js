@@ -24,6 +24,7 @@ async function get_user(email){
 //email must be unique
 async function create_user(email, password){
   const session = driver.session();
+  //hash password
   const hashedPassword = await bcrypt.hash(password, saltRounds);
 
   if(!password || typeof password !== 'string') return Promise.reject("Invalid Password");

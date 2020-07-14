@@ -23,4 +23,13 @@ async function main(){
   await drivers.driver.close()
 }
 
-main();
+// main();
+
+
+//TODO fix this tomorrow for some reason the python script crashes or something when being run
+const spawn = require("child_process").spawn;
+const scraper = spawn('python', ["./data/scrape/campusbooks.py", "013359162X"])
+scraper.stdout.on('data', (data) => {
+  console.log("test");
+  console.log(data.toString());
+});
