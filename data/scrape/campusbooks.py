@@ -17,7 +17,7 @@ info = soup.find('div', {"class": "col-xs-8 col-sm-12 div-o"})
 #TODO REMOVE SPACES FROM KEYS
 keys = []
 for tag in info.findAll('strong'):
-    keys += [tag.get_text()]
+    keys += [tag.get_text().replace(" ", "")]
 
 #get all valyes for json object
 values = []

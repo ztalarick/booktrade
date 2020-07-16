@@ -27,8 +27,8 @@ async function create_user(email, password){
   //hash password
   const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-  if(!password || typeof password !== 'string') return Promise.reject("Invalid Password");
-  if(!email || typeof email !== 'string') return Promise.reject("Invalid Email");
+  if(!password || typeof password !== 'string') return Promise.reject("Invalid Email or Password");
+  if(!email || typeof email !== 'string') return Promise.reject("Invalid Email or Password.");
 
   //see if email is already in database
   let search = await get_user(email);
