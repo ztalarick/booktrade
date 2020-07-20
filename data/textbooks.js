@@ -42,6 +42,51 @@ async function create_textbook(isbn){
   });
 }
 
+//get a textbook by ISBN number
+//returns a result object
+async function get_textbook(isbn){
+  const session = driver.session();
+
+  let result = await session.run('MATCH (t:Textbook {isbn: $isbnParam}) RETURN t', {
+    isbnParam: isbn
+  })
+
+  await session.close();
+  return result;
+}
+
+//function to delete a textbook by isbn number
+//returns a result object
+async function delete_textbook(isbn){
+  const session = driver.session();
+
+  let result = await session.run('MATCH (t:Textbook {isbn: $isbnParam}) DELETE t', {
+    isbnParam: isbn
+  })
+
+  await session.close();
+  return result;
+}
+
+//creates a listing relationship between a textbook and a user with property pice
+async function textbook_to_user(isbn, email, price){
+  const session = driver.session();
+
+  let result = await session.run(
+    'MATCH (t:Textbook {isbn: $isbnParam}), (u:User {email: $emailParam}) CREATE (t)-[l:Listing {price: $priceParam}]->(u) RETURN l',
+    {
+      isbnParam: isbn,
+      emailParam: email,
+      priceParam: price
+    });
+
+  await session.close();
+  return result;
+}
+
 module.exports = {
-  create_textbook: create_textbook
+  create_textbook: create_textbook,
+  get_textbook: get_textbook,
+  delete_textbook: delete_textbook,
+  textbook_to_user: textbook_to_user
 };

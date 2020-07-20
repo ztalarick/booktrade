@@ -14,7 +14,6 @@ soup = BeautifulSoup(r.text, "html.parser")
 info = soup.find('div', {"class": "col-xs-8 col-sm-12 div-o"})
 
 #get all keys for json object
-#TODO REMOVE SPACES FROM KEYS
 keys = []
 for tag in info.findAll('strong'):
     keys += [tag.get_text().replace(" ", "")]
@@ -35,3 +34,8 @@ for i in range(len(keys)):
 final_data = json.dumps(data)
 print(final_data)
 sys.stdout.flush()
+
+#TODO scrape prices also
+# prices = soup.findAll('td', {"class": "total"})
+# # prices = soup.findAll('tbody')
+# print(prices)

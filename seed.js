@@ -18,8 +18,10 @@ async function main(){
   //   console.log(e);
   // }
   //
-  // await users.getAll();
+
   await textbooks.create_textbook("013359162X");
+
+  await textbooks.textbook_to_user("013359162X", "someEmail@domain.com", 250);
 
   // on application exit:
   await drivers.driver.close()

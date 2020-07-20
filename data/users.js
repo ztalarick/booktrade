@@ -10,13 +10,16 @@ const driver = drivers.driver;
 
 //get a user by email
 async function get_user(email){
+  //connect to database
   const session = driver.session();
 
+  //run query
   let result = await session.run('MATCH (u:User {email: $emailParam}) RETURN u', {
     emailParam: email
   })
 
   await session.close();
+  //returns a result object
   return result;
 }
 
@@ -71,6 +74,41 @@ async function delete_user(email){
   return result;
 }
 
+//creates a listing relationship between a user and a textbook with property price
+async function textbook_to_user(isbn, email, price){
+  const session = driver.session();
+
+  let result = await session.run(
+    'MATCH (t:Textbook {isbn: $isbnParam}), (u:User {email: $emailParam}) CREATE (u)-[s:Selling {price: $priceParam}]->(t) RETURN s',
+    {
+      isbnParam: isbn,
+      emailParam: email,
+      priceParam: price
+    });
+
+  await session.close();
+  return result;
+}
+
+// creates a sold relationship between 2 users where u1 sold to u2,
+//includes the price and isbn of textbook sold
+//TODO include date somehow
+async function user_to_user(email1, email2, price, isbn){
+  const session = driver.session();
+
+  let result = await session.run(
+    'MATCH (u1:User {email: $email1Param}), (u2:User {email: $email2Param}) CREATE (u1)-[s:Sold {price: $priceParam, isbn: $isbnParam}]->(u2) RETURN s',
+    {
+      email1Param: email1,
+      email2Param: email2,
+      isbnParam: isbn,
+      priceParam: price
+    });
+
+  await session.close();
+  return result;
+}
+
 // Deletes all nodes FOR DEBUGGING ONLY
 async function clear(){
   const session = driver.session();
@@ -85,5 +123,7 @@ module.exports = {
   getAll: getAll,
   clear: clear,
   get_user: get_user,
-  delete_user: delete_user
+  delete_user: delete_user,
+  textbook_to_user: textbook_to_user,
+  user_to_user: user_to_user
 }
