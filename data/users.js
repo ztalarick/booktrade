@@ -8,6 +8,61 @@ const saltRounds = 13; //This is the number that decides how powerful the hash i
 const drivers = require('./drivers.js');
 const driver = drivers.driver;
 
+//function to attach the sessionID to a user
+//will be removed when logged out
+//return true if a user was updated, otherwise false
+async function attach_session(email, sessionID){
+  if(!email || typeof email !== 'string') return Promise.reject("Invalid Email or Password.");
+  if(!sessionID) return Promise.reject("Invalid Email or Password.");
+
+  const session = driver.session();
+
+  let result = await session.run('MATCH (u:User {email: $emailParam}) SET u.sessionId= $sessionIdParam', {
+    emailParam: email,
+    sessionIdParam: sessionID
+  });
+  await session.close();
+  return !(result.records.length === 0);
+}
+
+//function to check if a sessionId is in the database
+//returns true if id is found, otherwise false
+async function check_session(sessionId){
+  if(!sessionId) return Promise.reject("Invalid Email or Password.");
+  const session = driver.session();
+  //check if the sessionId is in the database
+  let result = await session.run('MATCH (u:User {sessionId: $sessionIdParam}) RETURN u', {
+    sessionIdParam: sessionId
+  });
+  console.log(result.records[0].get('u'));
+  await session.close();
+  return !(result.records.length === 0); //boolean on if there were any matches
+}
+// removes the sessionID from an email
+//to be called when logging out
+// sets the sessionId to LOGGEDOUT and should be checked when authenticated
+//to prevent someone from setting their sessionId to this
+async function remove_session(email){
+  return await attach_session(email, "LOGGEDOUT");
+}
+
+//see if there is a user where email and password match
+//returns true if there is a match, false otherwise
+async function check_login(email, password){
+  if(!password || typeof password !== 'string') return Promise.reject("Invalid Email or Password");
+  if(!email || typeof email !== 'string') return Promise.reject("Invalid Email or Password.");
+
+  let user = await get_user(email);
+  //compare plaintext password to the hashed one in storage
+  //email must be unique so there should never be multiple returns
+  try {
+    return bcrypt.compare(password, user.records[0].get('u').properties.password);
+  } catch (e) {
+    console.log(e);
+    return false;
+  }
+}
+
 //get a user by email
 async function get_user(email){
   //connect to database
@@ -16,7 +71,7 @@ async function get_user(email){
   //run query
   let result = await session.run('MATCH (u:User {email: $emailParam}) RETURN u', {
     emailParam: email
-  })
+  });
 
   await session.close();
   //returns a result object
@@ -26,12 +81,11 @@ async function get_user(email){
 //function to create a user
 //email must be unique
 async function create_user(email, password){
+  if(!password || typeof password !== 'string') return Promise.reject("Invalid Email or Password");
+  if(!email || typeof email !== 'string') return Promise.reject("Invalid Email or Password.");
   const session = driver.session();
   //hash password
   const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-  if(!password || typeof password !== 'string') return Promise.reject("Invalid Email or Password");
-  if(!email || typeof email !== 'string') return Promise.reject("Invalid Email or Password.");
 
   //see if email is already in database
   let search = await get_user(email);
@@ -125,5 +179,9 @@ module.exports = {
   get_user: get_user,
   delete_user: delete_user,
   textbook_to_user: textbook_to_user,
-  user_to_user: user_to_user
-}
+  user_to_user: user_to_user,
+  check_login: check_login,
+  attach_session: attach_session,
+  check_session: check_session,
+  remove_session: remove_session
+};

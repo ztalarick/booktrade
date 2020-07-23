@@ -6,6 +6,7 @@ const session = require('express-session');
 const cookieParser = require("cookie-parser");
 const drivers = require('./data/drivers.js');
 
+//apparently i dont have to use this
 app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -13,13 +14,18 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(session({
     name: 'AuthCookie',
-    secret: 'some secret string!',
+    secret: 'booktrade is sick',
     resave: false,
-    saveUninitialized: true,
-    cookie: {
-        expires: 600000
-    }
+    saveUninitialized: true
 }));
+//middleware to clear cookie if the user is no longer logged in
+// app.use((req, res, next) => {
+//     if (req.cookies.AuthCookie && !req.session.username) {
+//         res.clearCookie('AuthCookie');
+//         console.log('CLEAR COOKIE');
+//     }
+//     next();
+// });
 
 configRoutes(app);
 const server = app.listen(3000, function() {
