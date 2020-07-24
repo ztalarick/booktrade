@@ -9,6 +9,7 @@ const { v4: uuidv4 } = require('uuid');
 * add middleware to check authentication
 */
 
+
 //Route to register an account
 //TODO implement payment method
 router.post('/account/register', async (req, res) => {
@@ -23,10 +24,10 @@ router.post('/account/register', async (req, res) => {
 
 //Route to login
 router.post('/account/login', async (req, res) => {
-  if(await users.check_login(req.body.email, req.body.password)){ //if good login
-    //let sessionid = uuidv4(); //generate sessionID
-    //req.session.user = {email: req.body.email, sessionID: sessionid}; //set cookies
-    users.attach_session(req.body.email, req.cookies.AuthCookie); //attach sessionID
+  if((req.body.email) && (req.body.password) && await users.check_login(req.body.email, req.body.password)){ //if good login
+    let sessionid = uuidv4(); //generate sessionID
+    req.session.user = {email: req.body.email, sessionId: sessionid}; //set cookies
+    users.attach_session(req.body.email, sessionid); //attach sessionID
     res.sendStatus(200);
   } else{ //bad username or password
     res.status(401).json({error: "Wrong email or password."});
@@ -35,7 +36,7 @@ router.post('/account/login', async (req, res) => {
 
 //route to logout
 router.get('/account/logout', async (req, res) => {
-  if(await users.remove_session(req.session.user.email)){ //if successfully removed sessionid
+  if((req.session.user) && await users.remove_session(req.session.user.email)){ //if successfully removed sessionid
     req.session.destroy(); //destroy session
     res.sendStatus(200);
   }else{
@@ -45,13 +46,40 @@ router.get('/account/logout', async (req, res) => {
 });
 
 router.get('/account/test', async (req, res) => {
-  console.log(req.session.email);
-  console.log(req.cookies.AuthCookie);
-  if(!(await users.check_session(req.cookies.AuthCookie))){
+  if(!(req.session.user) || !(await users.check_session(req.session.user.email, req.session.user.sessionId))){
     res.status(401).json({error: "not authenticated"});
   }else{
     res.sendStatus(200);
   }
+});
+
+//get billing information
+router.get('/account/billing', async (req, res) => {
+  //TODO
+});
+
+//updates billing information
+router.put('/account/billing', async (req, res) => {
+  //TODO
+});
+
+//get shipping information
+router.get('/account/shipping', async (req, res) => {
+  //TODO
+});
+
+//update shipping information
+router.put('/account/shipping', async (req, res) => {
+  //TODO
+});
+
+router.get('/account/billing', async (req, res) => {
+  //TODO
+});
+
+//get account information
+router.get('/account', async (req, res) => {
+  //TODO
 });
 
 module.exports = router;

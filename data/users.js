@@ -1,4 +1,4 @@
-//This module is to create functions that query the database
+//This module is to create functions that query the database for users
 
 // run $sudo neo4j start
 const neo4j = require('neo4j-driver')
@@ -17,7 +17,7 @@ async function attach_session(email, sessionID){
 
   const session = driver.session();
 
-  let result = await session.run('MATCH (u:User {email: $emailParam}) SET u.sessionId= $sessionIdParam', {
+  let result = await session.run('MATCH (u:User {email: $emailParam}) SET u.sessionId= $sessionIdParam RETURN u', {
     emailParam: email,
     sessionIdParam: sessionID
   });
@@ -27,14 +27,15 @@ async function attach_session(email, sessionID){
 
 //function to check if a sessionId is in the database
 //returns true if id is found, otherwise false
-async function check_session(sessionId){
+async function check_session(email, sessionId){
   if(!sessionId) return Promise.reject("Invalid Email or Password.");
+  if(sessionId === "LOGGEDOUT") return false; //ensures session is always false when a user is logged out
   const session = driver.session();
   //check if the sessionId is in the database
-  let result = await session.run('MATCH (u:User {sessionId: $sessionIdParam}) RETURN u', {
-    sessionIdParam: sessionId
+  let result = await session.run('MATCH (u:User {email: $emailParam, sessionId: $sessionIdParam}) RETURN u', {
+    sessionIdParam: sessionId,
+    emailParam: email
   });
-  console.log(result.records[0].get('u'));
   await session.close();
   return !(result.records.length === 0); //boolean on if there were any matches
 }

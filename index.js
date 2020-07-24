@@ -11,7 +11,8 @@ app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-
+//maybe set cookie  to expire by:
+// cookie: {maxAge: [time]}
 app.use(session({
     name: 'AuthCookie',
     secret: 'booktrade is sick',
