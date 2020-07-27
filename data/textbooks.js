@@ -18,38 +18,65 @@ async function create_textbook(isbn){
 
     //convert the data to a string then to an object
     //also the python script puts the keys for isbn like "isbn 10" and "isbn 13" get rid of space
-    let data_object = JSON.parse(data.toString());
+    let data_object = JSON.parse(data.toString());;
+    console.log(data_object);
+    let result;
     try {
       // the query
-      let result = await session.run('CREATE (t:Textbook {title: $titleParam, authors: $authorsParam, edition: $editionParam, format: $formatParam, isbn: $isbnParam, isbn13: $isbn13Param}) RETURN t',
+      result = await session.run('CREATE (t:Textbook {title: $titleParam, authors: $authorsParam, edition: $editionParam, format: $formatParam, isbn: $isbnParam, isbn13: $isbn13Param}) RETURN t',
     {
       titleParam: data_object.title,
       authorsParam: data_object.Authors,
       editionParam: data_object.Edition,
       formatParam: data_object.Format,
-      isbnParam: isbn,
+      isbnParam: data_object.ISBN10,
       isbn13Param: data_object.ISBN13
     });
     } catch (e) {
       console.log(e);
+
     } finally {
       await session.close();
       await child_driver.close();
     }
+    return result;
   });
   scraper.stderr.on('data', (data) => {
     console.log('Error in campusbooks.py: ' + data);
   });
 }
 
-//get a textbook by ISBN number
+//get textbook by ISBN13
+async function get_textbook_isbn13(isbn13){
+  const session = driver.session();
+
+  let result = await session.run('MATCH (t:Textbook {isbn13: $isbnParam}) RETURN t', {
+    isbnParam: isbn13
+  });
+  await session.close();
+  return result;
+}
+
+//get a textbook by ISBN10 number
 //returns a result object
-async function get_textbook(isbn){
+async function get_textbook(isbn10){
   const session = driver.session();
 
   let result = await session.run('MATCH (t:Textbook {isbn: $isbnParam}) RETURN t', {
-    isbnParam: isbn
-  })
+    isbnParam: isbn10
+  });
+  await session.close();
+  return result;
+}
+
+//get a textbook by title
+//returns a result object
+async function get_textbook_title(title){
+  const session = driver.session();
+
+  let result = await session.run('MATCH (n) WHERE ANY(x IN KEYS(n) WHERE x =$titleParam) RETURN n, KEYS(n) AS myKeys', {
+    titleParam: title
+  });
 
   await session.close();
   return result;
@@ -87,6 +114,8 @@ async function textbook_to_user(isbn, email, price){
 module.exports = {
   create_textbook: create_textbook,
   get_textbook: get_textbook,
+  get_textbook_title: get_textbook_title,
   delete_textbook: delete_textbook,
-  textbook_to_user: textbook_to_user
+  textbook_to_user: textbook_to_user,
+  get_textbook_isbn13: get_textbook_isbn13
 };

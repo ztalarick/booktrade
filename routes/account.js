@@ -36,7 +36,7 @@ router.post('/account/login', async (req, res) => {
 
 //route to logout
 router.get('/account/logout', async (req, res) => {
-  if((req.session.user) && await users.remove_session(req.session.user.email)){ //if successfully removed sessionid
+  if((req.session.user) && await users.remove_session(req.session.user.email, req.session.user.sessionId)){ //if successfully removed sessionid
     req.session.destroy(); //destroy session
     res.sendStatus(200);
   }else{

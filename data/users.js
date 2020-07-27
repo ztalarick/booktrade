@@ -28,8 +28,9 @@ async function attach_session(email, sessionID){
 //function to check if a sessionId is in the database
 //returns true if id is found, otherwise false
 async function check_session(email, sessionId){
-  if(!sessionId) return Promise.reject("Invalid Email or Password.");
-  if(sessionId === "LOGGEDOUT") return false; //ensures session is always false when a user is logged out
+  if(!sessionId) return Promise.reject("Invalid sessionID.");
+  if(!email) return Promise.reject("Invalid Email or Password.");
+
   const session = driver.session();
   //check if the sessionId is in the database
   let result = await session.run('MATCH (u:User {email: $emailParam, sessionId: $sessionIdParam}) RETURN u', {
@@ -41,10 +42,19 @@ async function check_session(email, sessionId){
 }
 // removes the sessionID from an email
 //to be called when logging out
-// sets the sessionId to LOGGEDOUT and should be checked when authenticated
-//to prevent someone from setting their sessionId to this
-async function remove_session(email){
-  return await attach_session(email, "LOGGEDOUT");
+//removes the sessionId parameter from the user
+async function remove_session(email, sessionId){
+  if(!sessionId) return Promise.reject("Invalid sessionID.");
+  if(!email) return Promise.reject("Invalid Email.");
+
+  const session = driver.session();
+
+  let result = await session.run('MATCH (u:User {email: $emailParam, sessionId: $sessionIdParam}) REMOVE u.sessionID RETURN u', {
+    sessionIdParam: sessionId,
+    emailParam: email
+  });
+  await session.close();
+  return result;
 }
 
 //see if there is a user where email and password match
