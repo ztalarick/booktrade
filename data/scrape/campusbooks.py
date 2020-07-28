@@ -9,9 +9,10 @@ import json
 r = requests.get("https://www.campusbooks.com/search/" + sys.argv[1] + "?buysellrent=buy")
 soup = BeautifulSoup(r.text, "html.parser")
 
-
 # Class (col-xs-8 col-sm-12 div-o) has the info We need
-info = soup.find('div', {"class": "col-xs-8 col-sm-12 div-o"})
+# change to "col-xs-8 col-sm-12 hidden-xs" ??
+# I suppose this is an unreliable method because the class already changed to this for some reason
+info = soup.find('div', {"class": "col-xs-8 col-sm-12 hidden-xs"})
 
 #get all keys for json object
 keys = []

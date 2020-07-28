@@ -19,7 +19,6 @@ async function create_textbook(isbn){
     //convert the data to a string then to an object
     //also the python script puts the keys for isbn like "isbn 10" and "isbn 13" get rid of space
     let data_object = JSON.parse(data.toString());;
-    console.log(data_object);
     let result;
     try {
       // the query
@@ -74,9 +73,17 @@ async function get_textbook(isbn10){
 async function get_textbook_title(title){
   const session = driver.session();
 
-  let result = await session.run('MATCH (n) WHERE ANY(x IN KEYS(n) WHERE x =$titleParam) RETURN n, KEYS(n) AS myKeys', {
-    titleParam: title
-  });
+  // let result = await session.run("MATCH (t:Textbook) WHERE t.title =~ '(?i)$titleParam.*' RETURN t LIMIT 25", {
+  //   titleParam: title
+  // });
+
+  //you have to do it like this for some reason
+  //this query uses reg expr to search for the non-complete non-case-sensitive title
+  // =~ means regular expression
+  //(?i) means non case sensitive
+  // .* means its not an exact copy and the given title is only the begining part
+  let result = await session.run("MATCH (t:Textbook) WHERE t.title =~ '(?i)" + title + ".*' RETURN t LIMIT 25");
+  //there should be a better query and search method in the future
 
   await session.close();
   return result;
