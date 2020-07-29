@@ -140,16 +140,49 @@ async function delete_user(email){
 }
 
 //creates a listing relationship between a user and a textbook with property price
-async function textbook_to_user(isbn, email, price){
+async function create_listing(isbn, email, price, condition){
   const session = driver.session();
+  const date = new Date().toUTCString();
 
   let result = await session.run(
-    'MATCH (t:Textbook {isbn: $isbnParam}), (u:User {email: $emailParam}) CREATE (u)-[s:Selling {price: $priceParam}]->(t) RETURN s',
+    'MATCH (t:Textbook {isbn: $isbnParam}), (u:User {email: $emailParam}) CREATE (u)-[s:Selling {price: $priceParam, date: $dateParam, condition: $conditionParam}]->(t) RETURN s',
     {
       isbnParam: isbn,
       emailParam: email,
-      priceParam: price
+      priceParam: price,
+      dateParam: date,
+      conditionParam: condition
     });
+
+  await session.close();
+  return result;
+}
+
+//function delete listing relationship between a user and a textbook when the book is Sold
+// need to be changed because a user could sell 2 of the same textbook and this function would delete both
+async function delete_listing(isbn, email){
+  const session = driver.session();
+
+  let result = await session.run(
+    'MATCH  (u:User {email: $emailParam})-[s:Selling]->(t:Textbook {isbn: $isbnParam}) DELETE s',
+  {
+    isbnParam: isbn,
+    emailParam: email
+  });
+
+  await session.close();
+  return result;
+}
+
+//get all listings associated to a user with email
+// returns both the listing and the textbook
+async function get_listings(email){
+  const session = driver.session();
+
+  let result = await session.run(
+    "MATCH (u:User {email: $emailParam})-[l:Listing]->(t:Textbook) RETURN l, t", {
+    emailParam: email
+  });
 
   await session.close();
   return result;
@@ -157,17 +190,87 @@ async function textbook_to_user(isbn, email, price){
 
 // creates a sold relationship between 2 users where u1 sold to u2,
 //includes the price and isbn of textbook sold
-//TODO include date somehow
-async function user_to_user(email1, email2, price, isbn){
+async function create_sold(email1, email2, price, isbn){
   const session = driver.session();
+  const date = new Date().toUTCString();
 
   let result = await session.run(
-    'MATCH (u1:User {email: $email1Param}), (u2:User {email: $email2Param}) CREATE (u1)-[s:Sold {price: $priceParam, isbn: $isbnParam}]->(u2) RETURN s',
+    'MATCH (u1:User {email: $email1Param}), (u2:User {email: $email2Param}) CREATE (u1)-[s:Sold {price: $priceParam, isbn: $isbnParam, date: $dateParam}]->(u2) RETURN s',
     {
       email1Param: email1,
       email2Param: email2,
       isbnParam: isbn,
-      priceParam: price
+      priceParam: price,
+      dateParam: date
+    });
+
+  await session.close();
+  return result;
+}
+
+//purchased relationship
+// email1 purchased isbn from emal2 at price on date
+async function create_purchased(email1, email2, price, isbn){
+  const session = driver.session();
+  const date = new Date().toUTCString();
+
+  let result = await session.run(
+    'MATCH (u1:User {email: $email1Param}), (u2:User {email: $email2Param}) CREATE (u1)-[p:Purchased {price: $priceParam, isbn: $isbnParam, date: $dateParam}]->(u2) RETURN p',
+    {
+      email1Param: email1,
+      email2Param: email2,
+      isbnParam: isbn,
+      priceParam: price,
+      dateParam: date
+    });
+
+  await session.close();
+  return result;
+}
+
+
+// creates a shipping relationship
+// to be called after purchase
+// email1 shipping isbn to email2 with tracking_link package_num began on date with status
+//status = not/in transit
+async function create_shipping(email1, email2, isbn, tracking_link, package_num){
+  const session = driver.session();
+  const date = new Date().toUTCString();
+
+  let result = await session.run(
+    'MATCH (u1:User {email: $email1Param}), (u2:User {email: $email2Param}) CREATE (u1)-[s:Shipping {price: $priceParam, isbn: $isbnParam, date: $dateParam, tracking_link: $tracking_linkParam, package_num: $package_numParam, status: "Not in transit"}]->(u2) RETURN s',
+    {
+      email1Param: email1,
+      email2Param: email2,
+      isbnParam: isbn,
+      priceParam: price,
+      dateParam: date,
+      tracking_linkParam: tracking_link,
+      package_numParam: package_num
+    });
+
+  await session.close();
+  return result;
+}
+
+// creates a receiving relationship
+// to be called after purchase
+// email1 receiving isbn from email2 with tracking_link package_num began on date with status
+//status = not/in transit
+async function create_receiving(email1, email2, isbn, tracking_link, package_num){
+  const session = driver.session();
+  const date = new Date().toUTCString();
+
+  let result = await session.run(
+    'MATCH (u1:User {email: $email1Param}), (u2:User {email: $email2Param}) CREATE (u1)-[r:Receiving {price: $priceParam, isbn: $isbnParam, date: $dateParam, tracking_link: $tracking_linkParam, package_num: $package_numParam, status: "Not in transit"}]->(u2) RETURN r',
+    {
+      email1Param: email1,
+      email2Param: email2,
+      isbnParam: isbn,
+      priceParam: price,
+      dateParam: date,
+      tracking_linkParam: tracking_link,
+      package_numParam: package_num
     });
 
   await session.close();
@@ -189,10 +292,15 @@ module.exports = {
   clear: clear,
   get_user: get_user,
   delete_user: delete_user,
-  textbook_to_user: textbook_to_user,
-  user_to_user: user_to_user,
+  create_listing: create_listing,
+  create_sold: create_sold,
   check_login: check_login,
   attach_session: attach_session,
   check_session: check_session,
-  remove_session: remove_session
+  remove_session: remove_session,
+  delete_listing: delete_listing,
+  create_purchased: create_purchased,
+  create_shipping: create_shipping,
+  create_receiving: create_receiving,
+  get_listings: get_listings
 };

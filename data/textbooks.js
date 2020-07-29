@@ -103,16 +103,37 @@ async function delete_textbook(isbn){
 }
 
 //creates a listing relationship between a textbook and a user with property pice
-async function textbook_to_user(isbn, email, price){
+async function textbook_to_user(isbn, email, price, condition){
   const session = driver.session();
+  const date = new Date().toUTCString();
 
   let result = await session.run(
-    'MATCH (t:Textbook {isbn: $isbnParam}), (u:User {email: $emailParam}) CREATE (t)-[l:Listing {price: $priceParam}]->(u) RETURN l',
+    'MATCH (t:Textbook {isbn: $isbnParam}), (u:User {email: $emailParam}) CREATE (t)-[l:Listing {price: $priceParam, date: $dateParam, condition: $conditionParam}]->(u) RETURN l',
     {
       isbnParam: isbn,
       emailParam: email,
-      priceParam: price
+      priceParam: price,
+      dateParam: date,
+      conditionParam: condition
     });
+
+  await session.close();
+  return result;
+}
+
+
+//deletes textbook with isbn listing to user with email
+// to be called after textbook is sold
+async function delete_textbook_listing(isbn, email){
+  const session = driver.session();
+
+  let result = await session.run(
+    'MATCH  (u:User {email: $emailParam})<-[l:Listing]-(t:Textbook {isbn: $isbnParam}) DELETE l',
+  {
+    isbnParam: isbn,
+    emailParam: email
+  });
+
 
   await session.close();
   return result;
@@ -124,5 +145,6 @@ module.exports = {
   get_textbook_title: get_textbook_title,
   delete_textbook: delete_textbook,
   textbook_to_user: textbook_to_user,
-  get_textbook_isbn13: get_textbook_isbn13
+  get_textbook_isbn13: get_textbook_isbn13,
+  delete_textbook_listing: delete_textbook_listing
 };

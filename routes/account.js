@@ -3,12 +3,6 @@ const router = express.Router();
 const users = require('../data/users.js');
 const { v4: uuidv4 } = require('uuid');
 
-/*
-* TODO - tomorrow fix authentication
-* need to work on saving correct information in cookies
-* add middleware to check authentication
-*/
-
 
 //Route to register an account
 //TODO implement payment method
