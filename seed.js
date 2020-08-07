@@ -13,10 +13,10 @@ async function main(){
 
 
   // await textbooks.create_textbook("013359162X");
-
-  console.log(await textbooks.get_textbook("013359162X"));
-  console.log("_____________________________");
-  console.log(await textbooks.get_textbook_title("modern"));
+  await textbooks.create_textbook("9780321637734");
+  // console.log(await textbooks.get_textbook("013359162X"));
+  // console.log("_____________________________");
+  // console.log(await textbooks.get_textbook_title("modern"));
 
   // await textbooks.textbook_to_user("013359162X", "someEmail@domain.com", 250);
 

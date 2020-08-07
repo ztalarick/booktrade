@@ -5,7 +5,6 @@ const driver = drivers.driver;
 const spawn = require("child_process").spawn;
 
 //creates a textbook from an isbn number, other data is filled by webscraping
-//TODO webscrape price data
 async function create_textbook(isbn){
   if(!isbn || typeof isbn !== 'string') return Promise.reject('Invalid isbn');
 
@@ -22,14 +21,16 @@ async function create_textbook(isbn){
     let result;
     try {
       // the query
-      result = await session.run('CREATE (t:Textbook {title: $titleParam, authors: $authorsParam, edition: $editionParam, format: $formatParam, isbn: $isbnParam, isbn13: $isbn13Param}) RETURN t',
+      result = await session.run('CREATE (t:Textbook {title: $titleParam, authors: $authorsParam, edition: $editionParam, format: $formatParam, isbn: $isbnParam, isbn13: $isbn13Param, new_price: $new_priceParam, used_price: $used_priceParam}) RETURN t',
     {
       titleParam: data_object.title,
       authorsParam: data_object.Authors,
       editionParam: data_object.Edition,
       formatParam: data_object.Format,
       isbnParam: data_object.ISBN10,
-      isbn13Param: data_object.ISBN13
+      isbn13Param: data_object.ISBN13,
+      used_priceParam: data_object.used_price,
+      new_priceParam: data_object.new_price
     });
     } catch (e) {
       console.log(e);
@@ -72,10 +73,6 @@ async function get_textbook(isbn10){
 //returns a result object
 async function get_textbook_title(title){
   const session = driver.session();
-
-  // let result = await session.run("MATCH (t:Textbook) WHERE t.title =~ '(?i)$titleParam.*' RETURN t LIMIT 25", {
-  //   titleParam: title
-  // });
 
   //you have to do it like this for some reason
   //this query uses reg expr to search for the non-complete non-case-sensitive title
@@ -139,6 +136,24 @@ async function delete_textbook_listing(isbn, email){
   return result;
 }
 
+async function get_listings(isbn){
+  const session = driver.session();
+  let result;
+
+  if(isbn.length === 13){
+    result = await session.run(
+      "MATCH (u:User)<-[l:Listing]-(t:Textbook {isbn13: $isbnParam}) RETURN l, u",
+    { isbnParam: isbn });
+  }else{
+    result = await session.run(
+      "MATCH (u:User)<-[l:Listing]-(t:Textbook {isbn: $isbnParam}) RETURN l, u",
+    { isbnParam: isbn });
+  }
+
+  await session.close();
+  return result;
+}
+
 module.exports = {
   create_textbook: create_textbook,
   get_textbook: get_textbook,
@@ -146,5 +161,6 @@ module.exports = {
   delete_textbook: delete_textbook,
   textbook_to_user: textbook_to_user,
   get_textbook_isbn13: get_textbook_isbn13,
-  delete_textbook_listing: delete_textbook_listing
+  delete_textbook_listing: delete_textbook_listing,
+  get_listings: get_listings
 };
