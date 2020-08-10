@@ -8,6 +8,7 @@ router.all('*', async(req, res, next) => {
     userAuthenticated = await users.check_session(req.session.user.email, req.session.user.sessionId);
   }catch(e){
     userAuthenticated = false;
+    // console.log(e);
   }
 
   message = `[${new Date().toUTCString()}]: ${req.method} ${req.originalUrl} (${userAuthenticated?'Authenticated':'Non-authenticated'} user)`
@@ -25,6 +26,7 @@ router.all('*', async (req, res, next) => {
       res.sendStatus(401); //if user is not authenticated then stop route
     }
   }catch(e) {
+    // console.log(e);
     //there is some error here, problably that there is no req.session, so they are tryng to register
     //list all routes that do not need authentication here:
     if(req.originalUrl === "/account/login" || req.originalUrl === "/account/register"){
@@ -34,5 +36,14 @@ router.all('*', async (req, res, next) => {
     }
   }
 });
+
+//middleware to clear cookie if the user is no longer logged in
+// app.use((req, res, next) => {
+//     if (req.cookies.AuthCookie && !req.session.username) {
+//         res.clearCookie('AuthCookie');
+//         console.log('CLEAR COOKIE');
+//     }
+//     next();
+// });
 
 module.exports = router;

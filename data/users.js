@@ -91,7 +91,8 @@ async function get_user(email){
 
 //function to create a user
 //email must be unique
-async function create_user(email, password){
+//the customer_id is the ID associated with the stripe customer. this is used to store payment and shipping information
+async function create_user(email, password, customer_id){
   if(!password || typeof password !== 'string') return Promise.reject("Invalid Email or Password");
   if(!email || typeof email !== 'string') return Promise.reject("Invalid Email or Password.");
   const session = driver.session();
@@ -103,9 +104,10 @@ async function create_user(email, password){
   if(search.records.length != 0) return Promise.reject("Error, email '" + email + "' is not unique. There is already a user with that email.")
 
   try {
-    let result = await session.run('CREATE (u:User {email: $emailParam, password: $passwordParam}) RETURN u', {
+    let result = await session.run('CREATE (u:User {email: $emailParam, password: $passwordParam, customer_id: $customer_idParam}) RETURN u', {
        emailParam: email,
-       passwordParam: hashedPassword
+       passwordParam: hashedPassword,
+       customer_idParam: customer_id
      })
   } catch (e){
     console.log(e);

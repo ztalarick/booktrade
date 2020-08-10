@@ -19,14 +19,7 @@ app.use(session({
     resave: false,
     saveUninitialized: true
 }));
-//middleware to clear cookie if the user is no longer logged in
-// app.use((req, res, next) => {
-//     if (req.cookies.AuthCookie && !req.session.username) {
-//         res.clearCookie('AuthCookie');
-//         console.log('CLEAR COOKIE');
-//     }
-//     next();
-// });
+
 
 configRoutes(app);
 const server = app.listen(3000, function() {
