@@ -100,18 +100,19 @@ async function delete_textbook(isbn){
 }
 
 //creates a listing relationship between a textbook and a user with property pice
-async function textbook_to_user(isbn, email, price, condition){
+async function textbook_to_user(isbn, email, price, condition, list_id){
   const session = driver.session();
   const date = new Date().toUTCString();
 
   let result = await session.run(
-    'MATCH (t:Textbook {isbn: $isbnParam}), (u:User {email: $emailParam}) CREATE (t)-[l:Listing {price: $priceParam, date: $dateParam, condition: $conditionParam}]->(u) RETURN l',
+    'MATCH (t:Textbook {isbn: $isbnParam}), (u:User {email: $emailParam}) CREATE (t)-[l:Listing {price: $priceParam, date: $dateParam, condition: $conditionParam, list_id: $list_idParam}]->(u) RETURN l',
     {
       isbnParam: isbn,
       emailParam: email,
       priceParam: price,
       dateParam: date,
-      conditionParam: condition
+      conditionParam: condition,
+      list_idParam: list_id
     });
 
   await session.close();
@@ -121,14 +122,15 @@ async function textbook_to_user(isbn, email, price, condition){
 
 //deletes textbook with isbn listing to user with email
 // to be called after textbook is sold
-async function delete_textbook_listing(isbn, email){
+async function delete_textbook_listing(isbn, email, list_id){
   const session = driver.session();
 
   let result = await session.run(
-    'MATCH  (u:User {email: $emailParam})<-[l:Listing]-(t:Textbook {isbn: $isbnParam}) DELETE l',
+    'MATCH  (u:User {email: $emailParam})<-[l:Listing {list_id: $list_idParam}]-(t:Textbook {isbn: $isbnParam}) DELETE l',
   {
     isbnParam: isbn,
-    emailParam: email
+    emailParam: email,
+    list_idParam: list_id
   });
 
 
@@ -136,6 +138,7 @@ async function delete_textbook_listing(isbn, email){
   return result;
 }
 
+//gets all listings associated with isbn
 async function get_listings(isbn){
   const session = driver.session();
   let result;
@@ -154,6 +157,18 @@ async function get_listings(isbn){
   return result;
 }
 
+//get a specific listing with list_id
+async function get_listing(list_id){
+  const session = driver.session();
+
+  let result = await session.run(
+    'MATCH (t:Textbook)-[l:Listing {list_id: $list_idParam}]->(u:User) RETURN t, l, u',
+    {list_idParam: list_id}
+  );
+  await session.close();
+  return result;
+}
+
 module.exports = {
   create_textbook: create_textbook,
   get_textbook: get_textbook,
@@ -162,5 +177,6 @@ module.exports = {
   textbook_to_user: textbook_to_user,
   get_textbook_isbn13: get_textbook_isbn13,
   delete_textbook_listing: delete_textbook_listing,
-  get_listings: get_listings
+  get_listings: get_listings,
+  get_listing: get_listing
 };

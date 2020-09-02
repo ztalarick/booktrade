@@ -141,19 +141,20 @@ async function delete_user(email){
   return result;
 }
 
-//creates a listing relationship between a user and a textbook with property price
+//creates a listing relationship between a user ---> textbook with property price and condition
 async function create_listing(isbn, email, price, condition){
   const session = driver.session();
   const date = new Date().toUTCString();
 
   let result = await session.run(
-    'MATCH (t:Textbook {isbn: $isbnParam}), (u:User {email: $emailParam}) CREATE (u)-[s:Selling {price: $priceParam, date: $dateParam, condition: $conditionParam}]->(t) RETURN s',
+    'MATCH (t:Textbook {isbn: $isbnParam}), (u:User {email: $emailParam}) CREATE (u)-[s:Selling {price: $priceParam, date: $dateParam, condition: $conditionParam, list_id: $list_idParam}]->(t) RETURN s',
     {
       isbnParam: isbn,
       emailParam: email,
       priceParam: price,
       dateParam: date,
-      conditionParam: condition
+      conditionParam: condition,
+      list_idParam: list_id
     });
 
   await session.close();
@@ -182,7 +183,7 @@ async function get_listings(email){
   const session = driver.session();
 
   let result = await session.run(
-    "MATCH (u:User {email: $emailParam})-[l:Listing]->(t:Textbook) RETURN l, t", {
+    "MATCH (u:User {email: $emailParam})-[s:Selling]->(t:Textbook) RETURN u, s, t", {
     emailParam: email
   });
 
@@ -190,20 +191,22 @@ async function get_listings(email){
   return result;
 }
 
-// creates a sold relationship between 2 users where u1 sold to u2,
-//includes the price and isbn of textbook sold
-async function create_sold(email1, email2, price, isbn){
+
+// creates a sold relationship between seller ---> textbook,
+//includes the price, isbn, condition of textbook sold
+async function create_sold(email1, email2, price, isbn, condition){
   const session = driver.session();
   const date = new Date().toUTCString();
 
   let result = await session.run(
-    'MATCH (u1:User {email: $email1Param}), (u2:User {email: $email2Param}) CREATE (u1)-[s:Sold {price: $priceParam, isbn: $isbnParam, date: $dateParam}]->(u2) RETURN s',
+    'MATCH (u:User {email: $email1Param}), (t:Textbook {isbn: $isbnParam}) CREATE (u)-[s:Sold {price: $priceParam, sold_to: $email2Param, date: $dateParam, condition: $conditionParam}]->(t) RETURN s',
     {
       email1Param: email1,
       email2Param: email2,
       isbnParam: isbn,
       priceParam: price,
-      dateParam: date
+      dateParam: date,
+      conditionParam: condition
     });
 
   await session.close();
@@ -212,18 +215,20 @@ async function create_sold(email1, email2, price, isbn){
 
 //purchased relationship
 // email1 purchased isbn from emal2 at price on date
-async function create_purchased(email1, email2, price, isbn){
+async function create_purchased(email1, email2, price, isbn, charge_id, condition){
   const session = driver.session();
   const date = new Date().toUTCString();
 
   let result = await session.run(
-    'MATCH (u1:User {email: $email1Param}), (u2:User {email: $email2Param}) CREATE (u1)-[p:Purchased {price: $priceParam, isbn: $isbnParam, date: $dateParam}]->(u2) RETURN p',
+    'MATCH (u:User {email: $email1Param}), (t:Textbook {isbn: isbnParam}) CREATE (u)-[p:Purchased {purchased_from: $email2Param, price: $priceParam, date: $dateParam, charge_id: $charge_idParam, condition: $conditionParam}]->(t) RETURN p',
     {
       email1Param: email1,
       email2Param: email2,
       isbnParam: isbn,
       priceParam: price,
-      dateParam: date
+      dateParam: date,
+      charge_idParam: charge_id,
+      conditionParam: condition
     });
 
   await session.close();
@@ -279,6 +284,23 @@ async function create_receiving(email1, email2, isbn, tracking_link, package_num
   return result;
 }
 
+//function to add a paymentMethod to a user
+// the payment_id is from stripe and is used by
+// stripe.paymentMethods.retrieve(payment_id, funct)
+//in the future maybe make this a new node and create a relationship from the user to the payment method. In this case a usser could have many payment methods.
+async function update_payment_method(email, payment_id){
+  const session = driver.session();
+
+  let result = await sessio.run(
+    'MATCH (u:User {email: $emailParam}) SET u.payment_id: $payment_idParam RETURN u',
+    {emailParam: email, payment_idParam: payment_id}
+  );
+
+  await session.close();
+  return result;
+}
+
+
 // Deletes all nodes FOR DEBUGGING ONLY
 async function clear(){
   const session = driver.session();
@@ -304,5 +326,6 @@ module.exports = {
   create_purchased: create_purchased,
   create_shipping: create_shipping,
   create_receiving: create_receiving,
-  get_listings: get_listings
+  get_listings: get_listings,
+  update_payment_method: update_payment_method
 };

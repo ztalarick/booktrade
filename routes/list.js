@@ -5,6 +5,7 @@ const express = require('express');
 const router = express.Router();
 const users = require('../data/users.js');
 const textbooks = require('../data/textbooks.js');
+const { v4: uuidv4 } = require('uuid');
 
 //create listing
 router.post('/list', async (req, res) => {
@@ -12,8 +13,10 @@ router.post('/list', async (req, res) => {
   if(!req.body.isbn || !req.body.price || !req.body.condition) res.sendStatus(400);
   try {
     //must create listing from both user -> textbook and textbook -> user
-    await users.create_listing(req.body.isbn, req.session.user.email, req.body.price, req.body.condition);
-    await textbooks.textbook_to_user(req.body.isbn, req.session.user.email, req.body.price, req.body.condition);
+    let list_id = "list_" + uuidv4(); //generate list_id
+
+    await users.create_listing(req.body.isbn, req.session.user.email, req.body.price, req.body.condition, list_id);
+    await textbooks.textbook_to_user(req.body.isbn, req.session.user.email, req.body.price, req.body.condition, list_id);
   } catch (e) {
     console.log(e);
     res.sendStatus(500);

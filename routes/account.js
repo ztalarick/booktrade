@@ -19,7 +19,7 @@ router.post('/account/register', async (req, res) => {
             res.sendStatus(500)
           } else{
             await users.create_user(req.body.email, req.body.password, customer.id);
-            res.sendStatus(200);
+            res.redirect(200, '/account/login');
           }
         }
       );
@@ -119,17 +119,16 @@ router.put('/account/billing', async (req, res) => {
 router.put('/account/shipping', async (req, res) => {
   if (typeof req.body.line1 === "undefined") return res.sendStatus(400);
   if (typeof req.body.city === "undefined") req.body.city = null;
-  if (typeof req.body.country === "undefined") req.body.country = "USA"
+  if (typeof req.body.country === "undefined") req.body.country = "USA";
   if (typeof req.body.line2 === "undefined") req.body.line2 = null;
   if (typeof req.body.postal_code === "undefined") req.body.postal_code = null;
   if (typeof req.body.state === "undefined") req.body.state = null;
 
-  try{
     let user = await users.get_user(req.session.user.email);
 
     stripe.customers.update(
-      user.records[0].get('u').properties.customer_id,
-      {shipping: req.body},
+      user.records[0].get('u').properties.customer_id, //get the customer_id associated with the user from the database
+      {shipping: {address: req.body}},
       function(err, customer) {
         if(err){
           console.log(err);
@@ -140,14 +139,38 @@ router.put('/account/shipping', async (req, res) => {
         }
       }
     );
-  } catch(e) {
-    console.log(e);
-    res.sendStatus(500);
-  }
 });
 
 //update payment method
 router.put('/account/payment', async (req, res) => {
+  if(typeof req.body.cc_num === "undefined" ||
+    typeof req.body.exp_month === "undefined" ||
+    typeof req.body.exp_year === "undefined" ||
+    typeof req.body.cvc === "undefined"){
+      return res.sendStatus(400); // bad request, not correct information / format
+    }
+    try{
+      const user = await users.get_user(req.session.user.email)
+      const customer_id = user.records[0].get('u').properties.customer_id
+    } catch(e) {
+      console.log(e);
+      return res.sendStatus(500);
+    }
+
+
+    const card = await stripe.customers.createSource(
+      customer_id,
+      {source: {
+        object: 'card',
+        number: req.body.cc_num,
+        exp_month: req.body.exp_month,
+        exp_year: req.body.exp_year,
+        cvc: req.body.cvc
+      }}
+    );
+
+    await users.update_payment_method(req.session.email, card.id)
+    res.sendStatus('200');
 
 });
 
