@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const users = require('../data/users.js');
 const Stripe = require('stripe');
-const stripe = Stripe('sk_test_51HAJL2AqnGgYIobrTfsLtnIVDSKFpI2Qcxg1aAZmcz2zSaILkrOVLUsjB4M8BaKasbwD3Wd5ECt8BqPpUbHiEyTx00pt4Bszd0');
+const stripe = Stripe('key-here');
 const { v4: uuidv4 } = require('uuid');
 
 
